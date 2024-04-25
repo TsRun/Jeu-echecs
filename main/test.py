@@ -1,44 +1,42 @@
-import tkinter as tk
+# On a besoin d'importer Image de PIL pour ouvrir et analyser l'image uploadée
+from PIL import Image
+import collections
 
-def afficher_coup(coup):
-    # Ajouter le coup à la liste des coups joués
-    coups_joues.append(coup)
+# Chemin de l'image uploadée
+image_path = 'images/capture.png'
 
-    # Effacer le canevas pour rafraîchir l'affichage
-    canvas.delete("coups_joues")
+# Ouvrir l'image
+img = Image.open(image_path)
 
-    # Réinitialiser la position Y
-    y_position = 20
+# Convertir l'image en liste de pixels
+pixels = list(img.getdata())
 
-    # Réafficher tous les coups joués
-    for index, coup in enumerate(coups_joues, start=1):
-        # Ajouter le numéro de coup et le coup joué
-        texte = f"{index}. {coup} "
-        # Ajouter le texte sur le canevas avec une position Y fixe et une position X variable
-        canvas.create_text(10, y_position, text=texte, anchor="nw", tag="coups_joues")
-        # Incrémenter la position Y pour passer à la ligne suivante
-        y_position += 20
+# Création d'un Counter pour compter les occurrences de chaque couleur
+color_counter = collections.Counter(pixels)
 
-# Fonction pour gérer un clic sur le canevas
-def on_click(event):
-    # Exemple : Ajouter un coup et afficher les coups joués
-    afficher_coup("e4")
-    afficher_coup("e5")
-    afficher_coup("Nf3")
+# Récupérer les 10 couleurs les plus communes
+most_common_colors = color_counter.most_common(10)
 
-# Création de la fenêtre principale
-root = tk.Tk()
-root.title("Affichage des coups joués")
+# Fermer l'image pour libérer des ressources
+img.close()
 
-# Création du canevas
-canvas = tk.Canvas(root, width=200, height=200)
-canvas.pack()
+from PIL import Image, ImageDraw
 
-# Initialisation de la liste des coups joués
-coups_joues = []
+print(most_common_colors)
 
-# Liaison de la fonction on_click à l'événement clic sur le canevas
-canvas.bind("<Button-1>", on_click)
+# Créer une nouvelle image avec un fond blanc
+width, height = 400, 400  # ou la taille que vous préférez
+image = Image.new("RGB", (width, height), "white")
+draw = ImageDraw.Draw(image)
 
-# Lancement de la boucle principale
-root.mainloop()
+# La largeur de chaque bande de couleur
+bar_width = width // len(most_common_colors)
+
+# Dessiner chaque couleur comme une bande horizontale
+for i, (color, _) in enumerate(most_common_colors):
+    draw.rectangle([i * bar_width, 0, (i + 1) * bar_width, height], fill=color)
+
+# Afficher l'image
+image.show()
+
+

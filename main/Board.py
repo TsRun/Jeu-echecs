@@ -3,8 +3,6 @@ import tkinter as tk
 from PIL import Image, ImageTk
 from utils import convert_coords
 
-colors = ["#F0D9B5", "#B58863"]
-
 class Board(tk.Canvas):
 
 ###############################################################################
@@ -12,38 +10,23 @@ class Board(tk.Canvas):
 #                            INITIALISATION                                   #
 #                                                                             #
 ###############################################################################
-    def __init__(self, root : tk.Tk, board : list[list[Piece]] = None):
+    def __init__(self, root : tk.Tk, canvas : tk.Canvas, board : list[list[Piece]] = None):
         if board is None:
             board = self.init_pieces()
+        self.canvas = canvas
         self.root = root
         self.board = board
         self.board_size = min(root.winfo_width(), root.winfo_height()) - 40
-        self.canvas = tk.Canvas(self.root, width=self.board_size, height=self.board_size)
 
     def init_pieces(self) -> list[list[Piece]]:
-        board = [
-            [], [], [], [], [], [], [], []
-        ]
-        board[0] = [Rook("black", (0, 0)), Knight("black", (0, 1)), Bishop("black", (0, 2)), Queen("black", (0, 3)), King("black", (0, 4)), Bishop("black", (0, 5)), Knight("black", (0, 6)), Rook("black", (0, 7))]
-        board[1] = [Pawn("black", (1, i)) for i in range(8)]
+        board = []
+        board.append([Rook("black", (0, 0)), Knight("black", (0, 1)), Bishop("black", (0, 2)), Queen("black", (0, 3)), King("black", (0, 4)), Bishop("black", (0, 5)), Knight("black", (0, 6)), Rook("black", (0, 7))])
+        board.append([Pawn("black", (1, i)) for i in range(8)])
         for i in range(2, 6):
-            board[i] = [Piece("", (i, j), "") for j in range(8)]
-        board[6] = [Pawn("white", (6, i)) for i in range(8)]
-        board[7] = [Rook("white", (7, 0)), Knight("white", (7, 1)), Bishop("white", (7, 2)), Queen("white", (7, 3)), King("white", (7, 4)), Bishop("white", (7, 5)), Knight("white", (7, 6)), Rook("white", (7, 7))]
+            board.append([Piece("", (i, j), "") for j in range(8)])
+        board.append([Pawn("white", (6, i)) for i in range(8)])
+        board.append([Rook("white", (7, 0)), Knight("white", (7, 1)), Bishop("white", (7, 2)), Queen("white", (7, 3)), King("white", (7, 4)), Bishop("white", (7, 5)), Knight("white", (7, 6)), Rook("white", (7, 7))])
         return board
-
-    def init_canvas(self) -> None:
-        self.init_board()
-
-    def init_board(self) -> None:
-        for i in range(8):
-            for j in range(8):
-                if (i + j) % 2 == 0:
-                    self.canvas.create_rectangle(j*self.board_size / 8, i*self.board_size / 8, (j + 1) * self.board_size / 8, (i + 1) * self.board_size / 8, fill=colors[0], tags="square")
-                else:
-                    self.canvas.create_rectangle(j*self.board_size / 8, i*self.board_size / 8, (j + 1) * self.board_size / 8, (i + 1) * self.board_size / 8, fill=colors[1], tags="square")
-        self.resize_pieces()
-
 
 ###############################################################################
 #                                                                             #
@@ -51,8 +34,8 @@ class Board(tk.Canvas):
 #                                                                             #
 ###############################################################################
 
-    def change_color_rectangle(self, position : tuple, color : str, transparent : int):
-        self.canvas.create_rectangle(position[1]*self.board_size / 8, position[0]*self.board_size / 8, (position[1] + 1) * self.board_size / 8, (position[0] + 1) * self.board_size / 8, fill=color, tags="color_change")
+    def change_color_rectangle(self, position : tuple, color : str, transparent : float):
+        self.canvas.create_rectangle(position[1]*self.board_size / 8, position[0]*self.board_size / 8, (position[1] + 1) * self.board_size / 8, (position[0] + 1) * self.board_size / 8, fill=color, tags="color_change", stipple=f'gray{int(transparent * 100)}')
 
     def reset_color(self):
         self.canvas.delete("color_change")
@@ -77,21 +60,19 @@ class Board(tk.Canvas):
 #                                                                             #
 ###############################################################################
 
-    def resize(self) -> None:
-        self.canvas.delete("all")
-        self.init_board()
-
-    def resize_pieces(self) -> None:
+    def show_board(self) -> None:
+        self.canvas.delete("piece")
+        self.board_size = min(self.root.winfo_width(), self.root.winfo_height()) - 40
         for i in range(8):
             j = 0
             for piece in self.board[i]:
                 j += 1
                 if piece.color == "Neutral":
                     continue
-                #print(f'{piece.type} {piece.color} {convert_coords(piece.position)} / {convert_coords((i, j - 1))}')
-                piece.image = Image.open(piece.image_path)
-                piece.image = piece.image.resize((int(self.board_size / 8), int(self.board_size / 8)))
-                piece.tkimage = ImageTk.PhotoImage(piece.image)
+                if piece.tkimage is None or piece.image.size != (int(self.board_size / 8), int(self.board_size / 8)):
+                    piece.image = Image.open(piece.image_path)
+                    piece.image = piece.image.resize((int(self.board_size / 8), int(self.board_size / 8)))
+                    piece.tkimage = ImageTk.PhotoImage(piece.image)
                 piece.ImageID = self.canvas.create_image(piece.position[1] * self.board_size / 8, piece.position[0] * self.board_size / 8, image=piece.tkimage, anchor="nw", tags="piece")
 
 
@@ -100,14 +81,6 @@ class Board(tk.Canvas):
 #                                  UTILS                                      #
 #                                                                             #
 ###############################################################################
-
-    def show_board(self):
-        if min(self.root.winfo_width(), self.root.winfo_height()) - 40 == self.board_size:
-            self.canvas.pack()
-        else:
-            self.board_size = min(self.root.winfo_width(), self.root.winfo_height()) - 40
-            self.resize()
-
 
     def __getitem__(self, position : int) -> Piece:
         return self.board[position]

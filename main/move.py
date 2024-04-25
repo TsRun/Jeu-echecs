@@ -10,25 +10,26 @@ class Move():
 #                            INITIALISATION                                   #
 #                                                                             #
 ###############################################################################
-    def __init__(self, last_position : 'Move' = None, last_move : str = "", root : tk.Tk = None):
+    def __init__(self, canvas : tk.Canvas, last_position : 'Move' = None, last_move : str = "", root : tk.Tk = None):
         self.next = None
         self.nexts = []
-        self.piece_selected = None
+        self._piece_selected = None
         self.is_the_actual = True
         if root is not None:
             self.root = root
+            self.canvas = canvas
             self.base_init()
         else:
             self.prev = last_position
             self.last_move = last_move
             self.root = last_position.root
+            self.canvas = last_position.canvas
             self.turn = "black" if last_position.turn == "white" else "white"
-            self.board = Board(self.root, last_position.board.copy())
+            self.board = Board(root=self.root, canvas=self.canvas, board=last_position.board.copy())
             self.after_move(self.board, last_move)
             #print(self.board)
             last_position.add_next(self)
         self.opposite_turn = "black" if self.turn == "white" else "white"
-        self.board.init_canvas()
         self.king_position = search(self.board, "king", self.turn)
 
     def base_init(self):
@@ -36,7 +37,22 @@ class Move():
         self.board = []
         self.turn = "white"
         self.last_move = ""
-        self.board = Board(self.root)
+        self.board = Board(root=self.root, canvas=self.canvas)
+
+    @property
+    def piece_selected(self):
+        return self._piece_selected
+
+    @piece_selected.setter
+    def piece_selected(self, piece):
+        self._piece_selected = piece
+        self.observe_piece(piece)
+
+    def observe_piece(self, value):
+        if value is None:
+            self.canvas.delete("color_change")
+        else:
+            self.board.change_color_rectangle(value.position, "yellow", 0.5)
 
 ###############################################################################
 #                                                                             #
@@ -59,19 +75,18 @@ class Move():
             return "StaleMate"
 
     def do_move(self, move : str) -> 'Move':
-        if move[0] != 's':
-            print(f'The move was {self.piece_selected.type} to {convert_coords((int(move[2]), int(move[3])))}')
+        print(f'The move was {convert_move(move, self.board.board)}')
         self.piece_selected = None
         self.is_the_actual = False
         self.hide_board()
-        return Move(self, move)
+        return Move(canvas=self.canvas, last_position=self, last_move=move, root=None)
 
     def is_legal(self, position : tuple, piece : Piece) -> str:
         #print(self.board.board)
         if not position in piece.possible_moves(self.board.board):
             new_move = self.is_special_move(position, piece)
         elif piece.type == "pawn" and position[0] in [0, 7]:
-            new_move = f'pQ{piece.position[0]}{piece.position[1]}{position[0]}{position[1]}'
+            new_move = f'sppQ{piece.position[0]}{piece.position[1]}{position[0]}{position[1]}'
         else:
             new_move =f'{piece.position[0]}{piece.position[1]}{position[0]}{position[1]}'
         if new_move != "":
@@ -98,7 +113,7 @@ class Move():
                         break
                     if self.board[piece.position[0]][i].color != "Neutral":
                         return ""
-                return "spO-O"
+                return "sp0-0"
             elif position[1] <= 2:
                 for i in range(piece.position[1] - 2, piece.position[1] + 1, -1):
                     if is_square_attack((piece.position[0], i), self.board.board, self.opposite_turn):
@@ -109,11 +124,12 @@ class Move():
                         break
                     if self.board[piece.position[0]][i].color != "Neutral":
                         return ""
-                return "spO-O-O"
+                return "sp0-0-0"
             else:
                 return ""
         elif piece.type == "pawn":
-            pass
+            if abs(position[1] - piece.position[1]) == 1 and position[0] == piece.position[0] + piece.direction and self.board[position[0]][position[1]].color == "Neutral" and self.last_move == f'{position[0] + piece.direction}{position[1]}{piece.position[0]}{position[1]}':
+                return f'spe{piece.position[0]}{piece.position[1]}{position[0]}{position[1]}'
         return ""
 
     def after_move(self, board : list[list[Piece]], current_move : str):
@@ -127,14 +143,14 @@ class Move():
             board[int(current_move[0])][int(current_move[1])] = Piece("", (int(current_move[0]), int(current_move[1])), "")
 
     def special_move(self, board : Board, current_move : str):
-        if current_move == "O-O":
+        if current_move == "0-0":
             if self.turn == "black":
                 self.after_move(board, "7476")
                 self.after_move(board, "7775")
             else:
                 self.after_move(board, "0406")
                 self.after_move(board, "0705")
-        elif current_move == "O-O-O":
+        elif current_move == "0-0-0":
             if self.turn == "black":
                 self.after_move(board, "7472")
                 self.after_move(board, "7073")
@@ -143,12 +159,13 @@ class Move():
                 self.after_move(board, "0003")
         elif current_move[0] == "p":
             promotions = {'Q' : Queen, 'R' : Rook, 'N' : Knight, 'B' : Bishop}
-            board[int(current_move[4])][int(current_move[5])] = promotions[current_move[1]](self.turn, (int(current_move[4]), int(current_move[5])))
-            board[int(current_move[2], int(current_move[3]))] = Piece("", (int(current_move[0]), int(current_move[1]), ""))
+            color = board[int(current_move[2])][int(current_move[3])].color
+            board[int(current_move[4])][int(current_move[5])] = promotions[current_move[1]](color, (int(current_move[4]), int(current_move[5])))
+            board[int(current_move[2])][int(current_move[3])] = Piece("", (int(current_move[2]), int(current_move[3])), "")
         elif current_move[0] == "e":
-            current_piece = self.board[int(current_move[2])][int(current_move[3])]
-            board[current_move[3]][int(current_move[3])] = Piece("", (int(current_move[2]), int(current_move[3]), ""))
-            self.after_move(board, current_move[4:])
+            piece = board[int(current_move[1])][int(current_move[2])]
+            board[int(current_move[3]) - piece.direction][int(current_move[4])] = Piece("", (int(current_move[3]) - piece.direction, int(current_move[4])), "")
+            self.after_move(board, current_move[1:])
         else:
             print("error")
 
@@ -169,8 +186,7 @@ class Move():
         self.board.show_board()
 
     def hide_board(self):
-        self.board.canvas.pack_forget()
-
+        self.board.canvas.delete("piece")
 
 ###############################################################################
 #                                                                             #
@@ -199,8 +215,7 @@ class Move():
             return self
         x, y = int(event.x // (self.board.board_size / 8)), int(event.y // (self.board.board_size / 8))
         #print(f'You clicked in {convert_coords((y,x))}')
-        old_x, old_y = map(lambda x:x * (self.board.board_size / 8), self.piece_selected.position)
-        self.board.canvas.coords(self.piece_selected.ImageID, old_y, old_x)
+        self.reset_piece()
         if (y, x) != self.piece_selected.position:
             #print(f'You want to move {self.piece_selected.type} to {convert_coords((y,x))}')
             new_move = self.is_legal((y, x), self.piece_selected)
@@ -213,3 +228,13 @@ class Move():
         x, y = event.x - 40, event.y - 40
         if self.piece_selected is not None:
             self.board.canvas.coords(self.piece_selected.ImageID, x, y)
+
+    def reset_piece(self):
+        if self.piece_selected is None:
+            return
+        old_x, old_y = map(lambda x:x * (self.board.board_size / 8), self.piece_selected.position)
+        self.board.canvas.coords(self.piece_selected.ImageID, old_y, old_x)
+
+    def on_right_click(self, event):
+        self.reset_piece()
+        self.piece_selected = None
