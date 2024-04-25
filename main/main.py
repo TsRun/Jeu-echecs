@@ -1,7 +1,5 @@
 import tkinter as tk
-from PIL import Image, ImageTk
 from move import Move
-from utils import *
 
 class Game():
 
@@ -26,10 +24,7 @@ class Game():
         self.change_size()
 
     def change_size(self):
-        colors_rgb = [((92, 89, 87), 3620), ((249, 249, 249), 3536), ((240, 205, 164), 2621), ((239, 204, 163), 2258), ((239, 204, 162), 2049), ((240, 206, 165), 1833), ((241, 206, 165), 1725), ((238, 203, 161), 1675), ((242, 207, 167), 1660), ((241, 206, 166), 1616)]
-        new_colors = ["#F0D9B5", "#B58863"] + ['#' + ''.join(f'{value:02x}' for value in rgb) for rgb, _ in colors_rgb]
-        number = (0, 1)
-        colors = [new_colors[i] for i in number]
+        colors = ["#EFCA9C", "#B86130"]
         self.board_size = min(self.root.winfo_width(), self.root.winfo_height()) - 40
         self.canvas.config(width=self.board_size + 1, height=self.board_size + 1)
         self.canvas.delete("all")
@@ -62,7 +57,7 @@ class Game():
             print(f'{self.opposite_turn} wins')
             self.root.quit()
         if situation == "StaleMate":
-            print(f'StaleMate, Draw')
+            print('StaleMate, Draw')
             self.root.quit()
 
     def on_release(self, event):

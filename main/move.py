@@ -1,6 +1,6 @@
 from Board import Board
-from Piece import Piece, Pawn, Rook, Knight, Bishop, Queen, King
-from utils import *
+from Piece import Piece, Rook, Knight, Bishop, Queen
+from utils import search, is_square_attack, is_check, convert_move
 import tkinter as tk
 
 class Move():
@@ -52,7 +52,7 @@ class Move():
         if value is None:
             self.canvas.delete("color_change")
         else:
-            self.board.change_color_rectangle(value.position, "yellow", 0.5)
+            self.board.change_color_rectangle(value.position, "#F2C960", 1)
 
 ###############################################################################
 #                                                                             #
@@ -83,7 +83,7 @@ class Move():
 
     def is_legal(self, position : tuple, piece : Piece) -> str:
         #print(self.board.board)
-        if not position in piece.possible_moves(self.board.board):
+        if position not in piece.possible_moves(self.board.board):
             new_move = self.is_special_move(position, piece)
         elif piece.type == "pawn" and position[0] in [0, 7]:
             new_move = f'sppQ{piece.position[0]}{piece.position[1]}{position[0]}{position[1]}'
@@ -100,7 +100,7 @@ class Move():
         return ""
 
     def is_special_move(self, position : tuple, piece : Piece) -> str:
-        if piece.type == "king" and piece.has_moved == False:
+        if piece.type == "king" and piece.has_moved is False:
             if (position[0] != 7 and self.turn == "white") or (position[0] != 0 and self.turn == "black"):
                 return ""
             if position[1] >= 6:
@@ -109,7 +109,7 @@ class Move():
                         return ""
                 for i in range(piece.position[1] + 1, 8):
                     expected_rook = self.board[piece.position[0]][i]
-                    if expected_rook.type == "rook" and expected_rook.color == piece.color and expected_rook.has_moved == False:
+                    if expected_rook.type == "rook" and expected_rook.color == piece.color and expected_rook.has_moved is False:
                         break
                     if self.board[piece.position[0]][i].color != "Neutral":
                         return ""
@@ -120,7 +120,7 @@ class Move():
                         return ""
                 for i in range(piece.position[1] - 1, -1, -1):
                     expected_rook = self.board[piece.position[0]][i]
-                    if expected_rook.type == "rook" and expected_rook.color == piece.color and expected_rook.has_moved == False:
+                    if expected_rook.type == "rook" and expected_rook.color == piece.color and expected_rook.has_moved is False:
                         break
                     if self.board[piece.position[0]][i].color != "Neutral":
                         return ""
@@ -178,7 +178,7 @@ class Move():
 
     def add_next(self, next_move : 'Move'):
         self.nexts.append(next_move)
-        if self.next == None:
+        if self.next is None:
             self.next = next_move
 
     #Utils
@@ -206,7 +206,7 @@ class Move():
             new_move = self.is_legal((y, x), self.piece_selected)
             if new_move != "":
                 return self.do_move(new_move)
-            print(f'Not a legal move')
+            print('Not a legal move')
             self.piece_selected = None
         return self
 
@@ -221,7 +221,7 @@ class Move():
             new_move = self.is_legal((y, x), self.piece_selected)
             if new_move != "":
                 return self.do_move(new_move)
-            print(f'Not a legal move')
+            print('Not a legal move')
         return self
 
     def on_drag(self, event):

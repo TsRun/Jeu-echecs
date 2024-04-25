@@ -1,4 +1,4 @@
-from Piece import *
+from Piece import Piece
 
 def convert_coords(coords : tuple):
     y = 8 - coords[0]

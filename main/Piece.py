@@ -37,7 +37,7 @@ class Pawn(Piece):
         moves = []
         if board[self.position[0] + self.direction][self.position[1]].color == "Neutral":
             moves.append((self.position[0] + self.direction, self.position[1]))
-        if self.has_moved == False and board[self.position[0] + self.direction * 2][self.position[1]].color == "Neutral" and board[self.position[0] + self.direction][self.position[1]].color == "Neutral":
+        if self.has_moved is False and board[self.position[0] + self.direction * 2][self.position[1]].color == "Neutral" and board[self.position[0] + self.direction][self.position[1]].color == "Neutral":
             moves.append((self.position[0] + 2*self.direction, self.position[1]))
         if self.position[1] + 1 in range(8) and board[self.position[0] + self.direction][self.position[1] + 1].color == self.opposite_color:
             moves.append((self.position[0] + self.direction, self.position[1] + 1))

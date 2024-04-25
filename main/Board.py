@@ -1,7 +1,6 @@
 from Piece import Piece, Pawn, Rook, Knight, Bishop, Queen, King
 import tkinter as tk
 from PIL import Image, ImageTk
-from utils import convert_coords
 
 class Board(tk.Canvas):
 
@@ -35,7 +34,7 @@ class Board(tk.Canvas):
 ###############################################################################
 
     def change_color_rectangle(self, position : tuple, color : str, transparent : float):
-        self.canvas.create_rectangle(position[1]*self.board_size / 8, position[0]*self.board_size / 8, (position[1] + 1) * self.board_size / 8, (position[0] + 1) * self.board_size / 8, fill=color, tags="color_change", stipple=f'gray{int(transparent * 100)}')
+        self.canvas.create_rectangle(position[1]*self.board_size / 8, position[0]*self.board_size / 8, (position[1] + 1) * self.board_size / 8, (position[0] + 1) * self.board_size / 8, fill=color, tags="color_change")
 
     def reset_color(self):
         self.canvas.delete("color_change")
